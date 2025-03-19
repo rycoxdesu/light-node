@@ -1,6 +1,6 @@
 module github.com/Layer-Edge/light-node
 
-go 1.23
+go 1.23.1
 
 require (
 	github.com/CosmWasm/wasmd v0.54.0
