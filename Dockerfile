@@ -1,20 +1,23 @@
-# Gunakan image Go sebagai base image
-FROM golang:1.18-alpine as builder
+# Stage 1: Build untuk Linux
+FROM golang:1.18-alpine as builder-linux
 
-# Tentukan direktori kerja dalam container
 WORKDIR /app
-
-# Salin semua file dari direktori lokal ke dalam container
 COPY . .
+RUN GOOS=linux GOARCH=amd64 go build -o /bin/le-light-node-linux .
 
-# Build aplikasi Go
-RUN go build -o /bin/le-light-node .
+# Stage 2: Build untuk Windows
+FROM golang:1.18-alpine as builder-windows
 
-# Gunakan image lebih kecil untuk menjalankan aplikasi
+WORKDIR /app
+COPY . .
+RUN GOOS=windows GOARCH=amd64 go build -o /bin/le-light-node.exe .
+
+# Stage 3: Final
 FROM alpine:latest
 
-# Salin binary yang sudah dibangun dari stage sebelumnya
-COPY --from=builder /bin/le-light-node /bin/le-light-node
+# Copy binary yang sudah dibangun
+COPY --from=builder-linux /bin/le-light-node-linux /bin/le-light-node-linux
+COPY --from=builder-windows /bin/le-light-node.exe /bin/le-light-node.exe
 
 # Tentukan perintah untuk menjalankan aplikasi
-CMD ["/bin/le-light-node"]
+CMD ["/bin/le-light-node-linux"]
