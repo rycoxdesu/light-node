@@ -1,28 +1,26 @@
-# Stage 1: Build untuk Linux
-FROM golang:1.23.1 as builder-linux
+# Gunakan image resmi Golang sebagai base image
+FROM golang:1.23 AS builder
 
+# Tentukan direktori kerja dalam kontainer
 WORKDIR /app
+
+# Salin seluruh kode sumber ke dalam kontainer
 COPY . .
-RUN GOOS=linux GOARCH=amd64 go build -o /usr/local/bin/le-light-node-linux .
 
-# Stage 2: Build untuk Windows
-FROM golang:1.23 as builder-windows
+# Buat direktori output bin
+RUN mkdir -p bin
 
-WORKDIR /app
-COPY . .
-RUN GOOS=windows GOARCH=amd64 go build -o /usr/local/bin/le-light-node.exe .
+# Build binary untuk Linux
+RUN GOOS=linux GOARCH=amd64 go build -o bin/le-light-node-linux .
 
-# Stage 3: Final Image untuk Linux
+# Build binary untuk Windows
+RUN GOOS=windows GOARCH=amd64 go build -o bin/le-light-node.exe .
+
+# Stage kedua: Image final untuk menjalankan aplikasi
 FROM alpine:latest
 
-# Salin binary yang sudah dibangun dari builder-linux
-COPY --from=builder-linux /usr/local/bin/le-light-node-linux /usr/local/bin/le-light-node-linux
+# Salin binary hasil build dari tahap builder
+COPY --from=builder /app/bin /app/bin
 
 # Tentukan perintah untuk menjalankan aplikasi Linux sebagai default
-CMD ["/usr/local/bin/le-light-node-linux"]
-
-# Stage 4: Final Image untuk Windows (Optional)
-# Uncomment bagian ini jika kamu ingin menyalin binary Windows ke dalam image terpisah
-# FROM alpine:latest AS final-windows
-# COPY --from=builder-windows /usr/local/bin/le-light-node.exe /usr/local/bin/le-light-node.exe
-# CMD ["/usr/local/bin/le-light-node.exe"]
+CMD ["/app/bin/le-light-node-linux"]
