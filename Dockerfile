@@ -24,9 +24,6 @@ RUN apt-get update && apt-get install -y curl
 COPY --from=rust-build /app/risc0-merkle-service/target/release/risc0-merkle-service /usr/local/bin/risc0-merkle-service
 COPY --from=go-build /app/main /usr/local/bin/main
 
-# Salin file .env untuk variabel lingkungan (pastikan file ini ada di repo kamu)
-COPY .env /app/.env
-
 # Mengekspos port yang diperlukan oleh kedua server
 EXPOSE 8080 8081
 
