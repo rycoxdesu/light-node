@@ -1,31 +1,20 @@
-# Gunakan image dasar untuk Rust
-FROM rust:1.81.0 AS rust-build
+# Gunakan image Go sebagai base image
+FROM golang:1.18-alpine as builder
 
-# Set working directory untuk Rust (risc0-merkle-service)
-WORKDIR /app/risc0-merkle-service
-COPY ./risc0-merkle-service /app/risc0-merkle-service
-RUN cargo build --release
-
-# Gunakan image dasar untuk Go
-FROM golang:1.18 AS go-build
-
-# Set working directory untuk Go (main.go)
+# Tentukan direktori kerja dalam container
 WORKDIR /app
-COPY ./ /app
-RUN go build -o main main.go
 
-# Langkah 3: Menjalankan aplikasi di environment ringan
-FROM debian:bullseye-slim
+# Salin semua file dari direktori lokal ke dalam container
+COPY . .
 
-# Install dependensi runtime seperti curl dan lib lainnya
-RUN apt-get update && apt-get install -y curl
+# Build aplikasi Go
+RUN go build -o /bin/le-light-node .
 
-# Salin file aplikasi yang telah dibuild
-COPY --from=rust-build /app/risc0-merkle-service/target/release/risc0-merkle-service /usr/local/bin/risc0-merkle-service
-COPY --from=go-build /app/main /usr/local/bin/main
+# Gunakan image lebih kecil untuk menjalankan aplikasi
+FROM alpine:latest
 
-# Mengekspos port yang diperlukan oleh kedua server
-EXPOSE 8080 8081
+# Salin binary yang sudah dibangun dari stage sebelumnya
+COPY --from=builder /bin/le-light-node /bin/le-light-node
 
-# Perintah untuk menjalankan aplikasi
-CMD bash -c "risc0-merkle-service & main"
+# Tentukan perintah untuk menjalankan aplikasi
+CMD ["/bin/le-light-node"]
